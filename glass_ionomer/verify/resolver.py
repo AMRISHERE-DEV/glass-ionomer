@@ -366,8 +366,14 @@ def _expand_locator(locator: str) -> str:
 
 def _canonical_identity(final_url: str) -> str:
     """Resolver-confirmed identity from the FINAL fetched URL: a canonical id when the URL
-    pattern yields one, else the final URL itself (the real location, not the model's locator)."""
+    pattern yields one, else the final URL itself (the real location, not the model's locator).
+    Query strings and fragments never create a new identity; the EDGAR inline-viewer wrapper
+    (/ix?doc=...) resolves to the underlying archive path."""
     u = final_url.lower()
+    m = re.search(r"sec\.gov/ix\?doc=(/archives/edgar/data/[^\s?#]+)", u)
+    if m:
+        u = "https://www.sec.gov" + m.group(1)
+    u = u.split("#", 1)[0].split("?", 1)[0]
     m = re.search(r"arxiv\.org/abs/([\w./-]+)", u)
     if m:
         return "arxiv:" + m.group(1)
@@ -377,7 +383,7 @@ def _canonical_identity(final_url: str) -> str:
     m = re.search(r"pubmed\.ncbi\.nlm\.nih\.gov/(\d+)", u)
     if m:
         return "pmid:" + m.group(1)
-    return final_url
+    return u
 
 
 def _identity_tier(identity: str):

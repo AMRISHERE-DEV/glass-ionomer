@@ -88,6 +88,13 @@ def evidence_source_subject(record: EvidenceRecord) -> dict:
     }
 
 
+def _independence_key(r: EvidenceRecord) -> str:
+    ident = r.resolved_identity or ""
+    if ident.startswith(("doi:", "pmid:", "arxiv:")):
+        return ident
+    return "sha256:" + hashlib.sha256(r.content.encode()).hexdigest()
+
+
 def admit(records: Sequence[EvidenceRecord], *, now: datetime,
           max_age: timedelta = timedelta(days=3650),
           entailment_fn: EntailmentFn | None = None,
@@ -126,7 +133,11 @@ def admit(records: Sequence[EvidenceRecord], *, now: datetime,
             applicable=(r.applicable and (provenance or not require_provenance)),
             strength=r.strength,
             source_bound=(r.resolved_by is not None),
-            independence_key=r.resolved_identity,
+            # Independence is a property of the SOURCE, never of the proposer's lineage label
+            # or of the URL it was reached through: a canonical id (doi/pmid/arxiv) when the
+            # resolver confirmed one, else the content hash. Two fetches of the same bytes are
+            # one lineage whatever the locator or the lead's lineage_id said.
+            independence_key=_independence_key(r),
             quote_bound=quote_bound,
             model_derived_stance=(
                 stance is not Entailment.NEUTRAL

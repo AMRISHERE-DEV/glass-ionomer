@@ -151,6 +151,31 @@ Public pins: `tests/test_financial_period_fallback.py`
 correct_fiscal_value_cannot_be_refuted_using_previous_year,
 fiscal_year_change_makes_comparative_identity_ambiguous).
 
+## Class 9 - Lineage independence counted by locator and by proposer label (found by hypothesis testing, 2026-10-19)
+
+Independence of supporting evidence was keyed on the resolver-confirmed
+identity, which for any source that is not a DOI, PMID or arXiv id was the
+final fetched URL itself. One SEC filing reached through its archive path, the
+EDGAR inline-viewer wrapper (`/ix?doc=...`) and a query-string variant was
+therefore three "independent provenance-verified lineages", and the kernel
+minted CORROBORATED from a single document. On the legacy evidence path the
+key fell back to the proposer's own `lineage_id`, so two records with identical
+content and different model-chosen labels counted as two lineages. Both
+reproduced on v1.1.3 (see `tests/test_independence_identity.py`).
+
+Fix (v1.1.4): independence is a property of the source, never of the path to
+it or of the proposer's label. The key is the canonical identifier when the
+resolver confirmed one (doi/pmid/arxiv), else the SHA-256 of the resolver-owned
+content; two fetches of the same bytes are one lineage. `_canonical_identity`
+also drops query strings and fragments and unwraps the EDGAR viewer to the
+underlying archive path. Genuinely distinct documents still count separately.
+
+Public pins: `tests/test_independence_identity.py`
+(url_variants_of_one_filing_share_one_identity,
+one_document_two_urls_cannot_corroborate,
+two_genuinely_distinct_sources_still_count_as_two,
+legacy_lineage_label_is_not_proposer_controlled).
+
 ## Scope note
 
 The audits above were author-conducted; no external party has yet audited this
